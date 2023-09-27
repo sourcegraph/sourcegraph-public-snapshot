@@ -9,7 +9,7 @@ Batch Changes' default behavior is to stop if creating the diff on a repo errors
 Yes. There is a confirmation page that shows you all the actions that will occur on the various changesets in the batch change after you close it. Open changesets will be marked 'Kept open', which means that batch change won't alter them. See [closing a batch change](../how-tos/closing_or_deleting_a_batch_change.md#closing-a-batch-change).
 
 ### How scalable is Batch Changes? How many changesets can I create?
-Batch Changes can create tens of thousands of changesets, with no specified limit to the number of repositories that can be changed. This is something we run testing on internally.
+Batch Changes can create tens of thousands of changesets. This is something we run testing on internally.
 Known limitations:
 
 - Since diffs are created locally by running a docker container, performance depends on the capacity of your machine. See [How `src` executes a batch spec](../explanations/how_src_executes_a_batch_spec.md).
