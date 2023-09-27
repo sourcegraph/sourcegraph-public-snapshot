@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -143,6 +144,13 @@ func TestMiddleware(t *testing.T) {
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: time.Now()}, nil
 	})
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -323,6 +331,13 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	defer cleanup()
 
 	defer licensing.TestingSkipFeatureChecks()()
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	mockGetProviderValue = &Provider{
 		config: schema.OpenIDConnectAuthProvider{

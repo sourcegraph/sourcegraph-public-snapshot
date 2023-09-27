@@ -25,11 +25,13 @@ import (
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
@@ -186,6 +188,13 @@ func TestMiddleware(t *testing.T) {
 	mockProvider := NewProvider(providerConfig).(*provider)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "http://example.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	t.Run("refresh", func(t *testing.T) {
 		err := mockProvider.Refresh(context.Background())
