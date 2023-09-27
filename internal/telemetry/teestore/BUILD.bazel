@@ -24,6 +24,10 @@ go_test(
     name = "teestore_test",
     srcs = ["teestore_test.go"],
     embed = [":teestore"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
