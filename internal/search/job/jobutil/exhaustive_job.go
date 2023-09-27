@@ -25,7 +25,7 @@ type Exhaustive struct {
 func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	// TODO(keegan) a bunch of tests around this after branch cut pls
 
-	if !inputs.Exhaustive {
+	if inputs.Protocol != search.Exhaustive {
 		return Exhaustive{}, errors.New("only works for exhaustive search inputs")
 	}
 

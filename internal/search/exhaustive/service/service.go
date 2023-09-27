@@ -169,10 +169,10 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	defer cw.Flush()
 
 	header := []string{
-		"repo",
-		"rev",
-		"start",
-		"end",
+		"repository",
+		"revision",
+		"started_at",
+		"finished_at",
 		"status",
 		"failure_message",
 	}
@@ -184,7 +184,7 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	for iter.Next() {
 		job := iter.Current()
 		err = cw.Write([]string{
-			fmt.Sprintf("%d", job.RepoID),
+			string(job.RepoName),
 			job.Revision,
 			formatOrNULL(job.StartedAt),
 			formatOrNULL(job.FinishedAt),

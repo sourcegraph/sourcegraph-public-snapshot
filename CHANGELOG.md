@@ -15,11 +15,29 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased 5.3.0 (planned release date: February, 2024)
 
+### Added
+
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
 ## Unreleased 5.2.0 (planned release date: October 4, 2023)
 
 ### Added
 
 - Experimental support for AWS Bedrock Claude for the completions provider has been added. [#56321](https://github.com/sourcegraph/sourcegraph/pull/56321)
+- Recorded command logs can now be viewed for Git operations performed by Sourcegraph. This provides auditing and debugging capabilities. [#54997](https://github.com/sourcegraph/sourcegraph/issues/54997)
+- Disk usage metrics for gitservers are now displayed on the site admin Git Servers page, showing free/total disk space. This helps site admins monitor storage capacity on GitServers. [#55958](https://github.com/sourcegraph/sourcegraph/issues/55958)
 
 ### Changed
 

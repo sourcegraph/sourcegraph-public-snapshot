@@ -5,7 +5,6 @@ import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -44,18 +43,13 @@ import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.SignInWithSourcegraphPanel;
 import com.sourcegraph.cody.chat.Transcript;
-import com.sourcegraph.cody.config.AccountType;
-import com.sourcegraph.cody.config.AccountsHostProjectHolder;
 import com.sourcegraph.cody.config.CodyAccount;
 import com.sourcegraph.cody.config.CodyApplicationSettings;
 import com.sourcegraph.cody.config.CodyAuthenticationManager;
-import com.sourcegraph.cody.config.CodyPersistentAccountsHost;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
-import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.vscode.CancellationToken;
-import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.*;
 import java.util.List;
@@ -71,7 +65,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.plaf.ButtonUI;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.builtInWebServer.BuiltInServerOptions;
 
 public class CodyToolWindowContent implements UpdatableChat {
   public static final String ONBOARDING_PANEL = "onboardingPanel";
@@ -89,11 +82,11 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
+  private CancellationToken inProgressChat = new CancellationToken();
   private final JButton stopGeneratingButton =
       new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
   private final @NotNull JBPanelWithEmptyText recipesPanel;
   public final EmbeddingStatusView embeddingStatusView;
-  private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
   private CodyOnboardingGuidancePanel codyOnboardingGuidancePanel;
@@ -153,7 +146,7 @@ public class CodyToolWindowContent implements UpdatableChat {
         new Dimension(Short.MAX_VALUE, stopGeneratingButton.getPreferredSize().height + 10));
     stopGeneratingButton.addActionListener(
         e -> {
-          cancellationToken.abort();
+          inProgressChat.abort();
           stopGeneratingButton.setVisible(false);
           sendButton.setEnabled(true);
         });
@@ -183,23 +176,8 @@ public class CodyToolWindowContent implements UpdatableChat {
 
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
-    SignInWithSourcegraphPanel singInWithSourcegraphPanel = new SignInWithSourcegraphPanel();
-    singInWithSourcegraphPanel.addMainButtonActionListener(
-        e -> {
-          AccountsHostProjectHolder.getInstance(project)
-              .setAccountsHost(new CodyPersistentAccountsHost(project));
-          int port =
-              ApplicationManager.getApplication()
-                  .getService(BuiltInServerOptions.class)
-                  .getEffectiveBuiltInServerPort();
-          BrowserUtil.browse(
-              ConfigUtil.DOTCOM_URL
-                  + "user/settings/tokens/new/callback"
-                  + "?requestFrom=JETBRAINS"
-                  + "&port="
-                  + port);
-          updateVisibilityOfContentPanels();
-        });
+    SignInWithSourcegraphPanel singInWithSourcegraphPanel = new SignInWithSourcegraphPanel(project);
+    singInWithSourcegraphPanel.addMainButtonActionListener(e -> updateVisibilityOfContentPanels());
     allContentPanel.add(tabbedPane, "tabbedPane", CHAT_PANEL_INDEX);
     allContentPanel.add(
         singInWithSourcegraphPanel, SING_IN_WITH_SOURCEGRAPH_PANEL, SIGN_IN_PANEL_INDEX);
@@ -328,6 +306,7 @@ public class CodyToolWindowContent implements UpdatableChat {
           e -> {
             CodyApplicationSettings.getInstance().setOnboardingGuidanceDismissed(true);
             updateVisibilityOfContentPanels();
+            refreshRecipes();
           });
       if (displayName != null) {
         if (codyOnboardingGuidancePanel != null
@@ -344,19 +323,9 @@ public class CodyToolWindowContent implements UpdatableChat {
       isChatVisible = false;
       return;
     }
-    if (LocalAppManager.isPlatformSupported()
-        && codyAuthenticationManager.getActiveAccountType(project) == AccountType.LOCAL_APP) {
-      if (!LocalAppManager.isLocalAppRunning()) {
-        allContentLayout.show(allContentPanel, "appNotRunningPanel");
-        isChatVisible = false;
-      } else {
-        allContentLayout.show(allContentPanel, "tabbedPane");
-        isChatVisible = true;
-      }
-    } else {
-      allContentLayout.show(allContentPanel, "tabbedPane");
-      isChatVisible = true;
-    }
+
+    allContentLayout.show(allContentPanel, "tabbedPane");
+    isChatVisible = true;
   }
 
   @NotNull
@@ -468,9 +437,8 @@ public class CodyToolWindowContent implements UpdatableChat {
                         }));
   }
 
-  private void startMessageProcessing() {
-    cancellationToken.abort();
-    cancellationToken = new CancellationToken();
+  private void startMessageProcessing(@NotNull String recipeId) {
+    this.inProgressChat = new CancellationToken();
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
@@ -495,7 +463,6 @@ public class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
-              cancellationToken.abort();
               stopGeneratingButton.setVisible(false);
               sendButton.setEnabled(true);
               messagesPanel.removeAll();
@@ -531,7 +498,7 @@ public class CodyToolWindowContent implements UpdatableChat {
       return;
     }
 
-    startMessageProcessing();
+    startMessageProcessing(recipeId);
 
     ChatMessage humanMessage = ChatMessage.createHumanMessage(message, message);
     addMessageToChat(humanMessage);
@@ -553,7 +520,7 @@ public class CodyToolWindowContent implements UpdatableChat {
                       humanMessage,
                       recipeId,
                       this,
-                      cancellationToken);
+                      this.inProgressChat);
                 } catch (Exception e) {
                   logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                 }

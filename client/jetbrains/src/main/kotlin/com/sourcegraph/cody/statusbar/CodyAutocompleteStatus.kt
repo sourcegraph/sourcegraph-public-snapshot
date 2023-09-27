@@ -9,6 +9,11 @@ interface WithIcon {
 }
 
 enum class CodyAutocompleteStatus : PresentableEnum, WithIcon {
+  CodyUninit {
+    override fun getPresentableText(): String = "Cody is starting"
+
+    override val icon: Icon = Icons.StatusBar.CodyAutocompleteDisabled
+  },
   CodyDisabled {
     override fun getPresentableText(): String = ""
 
@@ -18,6 +23,11 @@ enum class CodyAutocompleteStatus : PresentableEnum, WithIcon {
     override fun getPresentableText(): String = "Cody autocomplete is disabled"
 
     override val icon: Icon = Icons.StatusBar.CodyAutocompleteDisabled
+  },
+  CodyNotSignedIn {
+    override fun getPresentableText(): String = "No account signed-in"
+
+    override val icon: Icon = Icons.StatusBar.CodyAutocompleteUnavailable
   },
   Ready {
     override fun getPresentableText(): String = "Cody autocomplete is enabled"

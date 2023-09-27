@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 
 	"github.com/google/uuid"
@@ -583,6 +584,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 	invalidURL := "https://invalid.com/%+o"
 	webhookID := int32(1)
 	webhookIDMarshaled := marshalWebhookID(webhookID)
+
 	conf.Mock(
 		&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -640,6 +642,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 			},
 		},
 	)
+
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:          "error if external URL invalid",
 		Context:        ctx,

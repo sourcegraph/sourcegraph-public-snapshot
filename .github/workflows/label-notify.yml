@@ -19,7 +19,6 @@ jobs:
                   team/search-product=@sourcegraph/search-product
                   team/search-core=@sourcegraph/search-core
                   team/code-insights=@vovakulikov
-                  team/delivery=@sourcegraph/delivery
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
                   team/devops=@sourcegraph/cloud-devops
@@ -28,4 +27,3 @@ jobs:
                   team/source=@sourcegraph/source
                   cody-gateway=@unknwon @eseliger @bobheadxi @efritz @ggilmore
                   team/search-platform=@sourcegraph/search-platform
-                  team/apis=@sourcegraph/apis

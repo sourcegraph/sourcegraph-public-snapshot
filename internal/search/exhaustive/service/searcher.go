@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 func FromSearchClient(client client.SearchClient) NewSearcher {
@@ -36,14 +36,11 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 			nil,
 			q,
 			search.Precise,
-			search.Streaming,
+			search.Exhaustive,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		// Hacky for now, but hard to adjust client API just yet.
-		inputs.Exhaustive = true
 
 		exhaustive, err := jobutil.NewExhaustive(inputs)
 		if err != nil {
@@ -64,41 +61,41 @@ type searchQuery struct {
 	clients    job.RuntimeClients
 }
 
-// TODO make this an iterator return since the result could be large and the
-// underlying infra already relies on iterators
-func (s searchQuery) RepositoryRevSpecs(ctx context.Context) ([]types.RepositoryRevSpecs, error) {
+func (s searchQuery) RepositoryRevSpecs(ctx context.Context) *iterator.Iterator[types.RepositoryRevSpecs] {
 	if err := isSameUser(ctx, s.userID); err != nil {
-		return nil, err
-	}
-
-	var repoRevSpecs []types.RepositoryRevSpecs
-	it := s.exhaustive.RepositoryRevSpecs(ctx, s.clients)
-	for it.Next() {
-		repoRev := it.Current()
-		var revspecs []string
-		for _, rev := range repoRev.Revs {
-			revStr := rev.String()
-			// avoid storing empty string since our DB expects non-empty
-			// string + this is easier to read in the DB.
-			if revStr == "" {
-				revStr = "HEAD"
-			}
-			revspecs = append(revspecs, revStr)
-		}
-		repoRevSpecs = append(repoRevSpecs, types.RepositoryRevSpecs{
-			Repository:         repoRev.Repo.ID,
-			RevisionSpecifiers: types.RevisionSpecifierJoin(revspecs),
+		iterator.New(func() ([]types.RepositoryRevSpecs, error) {
+			return nil, err
 		})
 	}
 
-	err := it.Err()
-	if isReposMissingError(err) {
-		// This isn't an error for us, we just don't search anything. We don't
-		// have the concept of alerts yet in search jobs.
-		err = nil
-	}
+	it := s.exhaustive.RepositoryRevSpecs(ctx, s.clients)
+	return iterator.New(func() ([]types.RepositoryRevSpecs, error) {
+		if it.Next() {
+			repoRev := it.Current()
+			var revspecs []string
+			for _, rev := range repoRev.Revs {
+				revStr := rev.String()
+				// avoid storing empty string since our DB expects non-empty
+				// string + this is easier to read in the DB.
+				if revStr == "" {
+					revStr = "HEAD"
+				}
+				revspecs = append(revspecs, revStr)
+			}
+			return []types.RepositoryRevSpecs{{
+				Repository:         repoRev.Repo.ID,
+				RevisionSpecifiers: types.RevisionSpecifierJoin(revspecs),
+			}}, nil
+		}
 
-	return repoRevSpecs, err
+		err := it.Err()
+		if isReposMissingError(err) {
+			// This isn't an error for us, we just don't search anything. We don't
+			// have the concept of alerts yet in search jobs.
+			return nil, nil
+		}
+		return nil, err
+	})
 }
 
 func (s searchQuery) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec types.RepositoryRevSpecs) ([]types.RepositoryRevision, error) {
@@ -170,29 +167,26 @@ func (s searchQuery) Search(ctx context.Context, repoRev types.RepositoryRevisio
 		Revs: []string{repoRev.Revision},
 	})
 
-	if err := w.WriteHeader("repo_id", "repo_name", "revision", "commit", "path"); err != nil {
-		return err
-	}
-
-	repoID := strconv.Itoa(int(repoRev.Repository))
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var (
-		mu          sync.Mutex // serialize writes to w
-		writeRowErr error      // capture if w.WriteRow fails
-	)
+	var mu sync.Mutex     // serialize writes to w
+	var writeRowErr error // capture if w.Write fails
+	matchWriter, err := newMatchCSVWriter(w)
+	if err != nil {
+		return err
+	}
 
 	// TODO currently ignoring returned Alert
 	_, err = job.Run(ctx, s.clients, streaming.StreamFunc(func(se streaming.SearchEvent) {
+		// TODO fail if se.Stats indicate missing backends or other things
+		// which may indicate we are might miss data.
+
 		mu.Lock()
 		defer mu.Unlock()
 
 		for _, match := range se.Results {
-			// TODO actually write useful CSV
-			key := match.Key()
-			err := w.WriteRow(repoID, string(key.Repo), repoRev.Revision, string(key.Commit), key.Path)
+			err := matchWriter.Write(match)
 			if err != nil {
 				cancel()
 				writeRowErr = err

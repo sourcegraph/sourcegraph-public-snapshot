@@ -14,61 +14,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 )
-
-func TestBackendFake(t *testing.T) {
-	testNewSearcher(t, context.Background(), NewSearcherFake(), newSearcherTestCase{
-		Query:        "1@rev1 1@rev2 2@rev3",
-		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
-		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
-		WantCSV: `repo,revspec,revision
-1,spec,rev1
-1,spec,rev2
-2,spec,rev3
-`,
-	})
-}
-
-type newSearcherTestCase struct {
-	Query        string
-	WantRefSpecs string
-	WantRepoRevs string
-	WantCSV      string
-}
-
-func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher, tc newSearcherTestCase) {
-	assert := require.New(t)
-
-	userID := int32(1)
-	ctx = actor.WithActor(ctx, actor.FromMockUser(userID))
-
-	searcher, err := newSearcher.NewSearch(ctx, userID, tc.Query)
-	assert.NoError(err)
-
-	// Test RepositoryRevSpecs
-	refSpecs, err := searcher.RepositoryRevSpecs(ctx)
-	assert.NoError(err)
-	assert.Equal(tc.WantRefSpecs, joinStringer(refSpecs))
-
-	// Test ResolveRepositoryRevSpec
-	var repoRevs []types.RepositoryRevision
-	for _, refSpec := range refSpecs {
-		repoRevsPart, err := searcher.ResolveRepositoryRevSpec(ctx, refSpec)
-		assert.NoError(err)
-		repoRevs = append(repoRevs, repoRevsPart...)
-	}
-	assert.Equal(tc.WantRepoRevs, joinStringer(repoRevs))
-
-	// Test Search
-	var csv csvBuffer
-	for _, repoRev := range repoRevs {
-		err := searcher.Search(ctx, repoRev, &csv)
-		assert.NoError(err)
-	}
-	assert.Equal(tc.WantCSV, csv.buf.String())
-}
 
 func TestWrongUser(t *testing.T) {
 	assert := require.New(t)
