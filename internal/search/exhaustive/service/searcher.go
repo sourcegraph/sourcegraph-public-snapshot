@@ -36,14 +36,11 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 			nil,
 			q,
 			search.Precise,
-			search.Streaming,
+			search.Exhaustive,
 		)
 		if err != nil {
 			return nil, err
 		}
-
-		// Hacky for now, but hard to adjust client API just yet.
-		inputs.Exhaustive = true
 
 		exhaustive, err := jobutil.NewExhaustive(inputs)
 		if err != nil {
