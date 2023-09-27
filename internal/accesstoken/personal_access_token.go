@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 )
 
@@ -17,7 +16,7 @@ import (
 const PersonalAccessTokenPrefix = "sgph_"
 const LocalInstanceIdentifier = "local" // TODO: Does this string need to be fixed length?
 
-// ParseAccessToken parses a personal access token to extract the token that is stored in the database
+// ParseAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
 // Personal access tokens can take several forms:
 //   - <token>
 //   - sgp_<token>
@@ -29,8 +28,7 @@ func ParsePersonalAccessToken(token string) (string, error) {
 		token = strings.TrimPrefix(token, prefix)
 	}
 
-	// Split a token of the form <instance_identifier>_<token> to extract just <token>.
-	// If no instance identifier is present, return the full token.
+	// Remove <instance-identifier> from token, if present
 	tokenParts := strings.Split(token, "_")
 	switch len(tokenParts) {
 	case 1:
@@ -48,7 +46,7 @@ func ParsePersonalAccessToken(token string) (string, error) {
 // GeneratePersonalAccessToken generates a new personal access token.
 // It returns the full token string, and the byte representation of the access token.
 // Personal access tokens have the form: sgph_<instance-identifier>_<token>
-func GeneratePersonalAccessToken() (string, [20]byte, error) {
+func GeneratePersonalAccessToken(licenseKey string) (string, [20]byte, error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return "", b, err
@@ -56,10 +54,9 @@ func GeneratePersonalAccessToken() (string, [20]byte, error) {
 
 	// TODO: Ensure this works for local dev instances - do they have pre-set license keys?
 	// Include part of the hashed license key in the token, to allow us to tie tokens back to an instance
-	config := conf.Get().SiteConfig()
 	var licenseKeyHash string
-	if config.LicenseKey != "" {
-		licenseKeyHash = hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(config.LicenseKey)))[:6]
+	if licenseKey != "" {
+		licenseKeyHash = hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(licenseKey)))[:6]
 	} else {
 		licenseKeyHash = LocalInstanceIdentifier
 	}

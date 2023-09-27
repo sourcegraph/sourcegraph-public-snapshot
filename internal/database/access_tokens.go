@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -159,7 +160,8 @@ func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int
 }
 
 func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
-	token, b, err := accesstoken.GeneratePersonalAccessToken()
+	config := conf.Get().SiteConfig()
+	token, b, err := accesstoken.GeneratePersonalAccessToken(config.LicenseKey)
 
 	if len(scopes) == 0 {
 		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
