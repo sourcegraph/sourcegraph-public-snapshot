@@ -133,7 +133,9 @@ Alternatively, you can also [Download and install the extension from the Jetbrai
 
 After a successful installation, Cody's icon appears in the sidebar. Click it, and you are prompted to log in as a free user by connecting to Sourcegraph.com or with your enterprise instance.
 
-You can also override automatic “codebase detection” by manually setting up the codebase.
+Cody fully understands your codebase context based on the project opened in your workspace. However, at any point, you can override the automatic “codebase detection” by clicking on the repo name below the Cody chat and then adding the Git URL.
+
+![override-codebase-context](https://storage.googleapis.com/sourcegraph-assets/Docs/override-context.png)
 
 ### For Sourcegraph enterprise users
 
