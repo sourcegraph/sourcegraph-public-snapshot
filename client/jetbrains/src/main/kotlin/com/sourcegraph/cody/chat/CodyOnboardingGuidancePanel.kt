@@ -13,7 +13,13 @@ import com.sourcegraph.cody.ui.HtmlViewer.createHtmlViewer
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionListener
-import javax.swing.*
+import javax.swing.BorderFactory
+import javax.swing.BoxLayout
+import javax.swing.Icon
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JEditorPane
+import javax.swing.JPanel
 import javax.swing.text.html.HTMLEditorKit
 import org.apache.commons.lang3.StringUtils
 
