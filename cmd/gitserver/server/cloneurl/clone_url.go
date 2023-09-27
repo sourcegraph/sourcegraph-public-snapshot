@@ -1,4 +1,4 @@
-package repos
+package cloneurl
 
 import (
 	"context"
@@ -31,16 +31,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func EncryptableCloneURL(ctx context.Context, logger log.Logger, db database.DB, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
+func ForEncryptableConfig(ctx context.Context, logger log.Logger, db database.DB, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
 	parsed, err := extsvc.ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {
 		return "", errors.Wrap(err, "loading service configuration")
 	}
 
-	return cloneURL(ctx, db, parsed, logger, kind, repo)
+	return cloneURL(ctx, logger, db, kind, parsed, repo)
 }
 
-func cloneURL(ctx context.Context, db database.DB, parsed any, logger log.Logger, kind string, repo *types.Repo) (string, error) {
+func cloneURL(ctx context.Context, logger log.Logger, db database.DB, kind string, parsed any, repo *types.Repo) (string, error) {
 	switch t := parsed.(type) {
 	case *schema.AWSCodeCommitConnection:
 		if r, ok := repo.Metadata.(*awscodecommit.Repository); ok {
@@ -153,7 +153,18 @@ func bitbucketServerCloneURL(repo *bitbucketserver.Repo, cfg *schema.BitbucketSe
 			} else {
 				password = cfg.Password
 			}
-			cloneURL = setUserinfoBestEffort(l.Href, cfg.Username, password)
+			cloneURL = l.Href
+			if cfg.Username != "" {
+				u, err := url.Parse(l.Href)
+				if err == nil {
+					if password != "" {
+						u.User = url.UserPassword(cfg.Username, password)
+					} else {
+						u.User = url.User(cfg.Username)
+					}
+					cloneURL = u.String()
+				}
+			}
 			// No break, so that we fallback to http in case of ssh missing
 			// with GitURLType == "ssh"
 		}
