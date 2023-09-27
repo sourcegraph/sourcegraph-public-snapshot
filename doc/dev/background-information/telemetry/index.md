@@ -114,6 +114,8 @@ The full event schema that ends up getting exported is defined in [`telemetrygat
 }
 ```
 
+A detailed schema is available in [the protocol documentation](./schema.md).
+
 > NOTE: In the Sourcegraph application, the new events being exported using `internal/telemetry` are sometimes loosely referred to as "V2", as it supersedes the existing mechanisms of writing directly to the `event_logs` database table.
 > The *Telemetry Gateway* schema, however, is `telemetrygateway/v1`, as it is the first iteration of the service's API.
 

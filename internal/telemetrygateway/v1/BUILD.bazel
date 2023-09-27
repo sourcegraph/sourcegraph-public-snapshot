@@ -98,11 +98,11 @@ go_test(
 
 genrule(
     name = "generate_docs",
-    srcs = ["telemetrygateway.proto"],
+    srcs = ["telemetrygateway.proto", "protoc-gen-doc.tmpl"],
     outs = ["outputs/protocol.md"],
     cmd = """
         mkdir -p $(@D)/outputs
-        protoc --doc_out=$(@D) --doc_opt=markdown,protocol.md $(location telemetrygateway.proto)
+        protoc --doc_out=$(@D) --doc_opt=$(location protoc-gen-doc.tmpl),protocol.md $(location telemetrygateway.proto)
     """,
     visibility = ["//doc/dev/background-information/telemetry:__pkg__"],
     tools = ["@com_github_pseudomuto_protoc_gen_doc//cmd/protoc-gen-doc"],
