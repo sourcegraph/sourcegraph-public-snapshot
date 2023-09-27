@@ -14,7 +14,7 @@ import com.sourcegraph.cody.auth.AccountsRepository
         ],
     reportStatistic = false,
     category = SettingsCategory.TOOLS)
-class CodyPersisentAccounts :
+class CodyPersistentAccounts :
     AccountsRepository<CodyAccount>, PersistentStateComponent<Array<CodyAccount>> {
   private var state = emptyArray<CodyAccount>()
 

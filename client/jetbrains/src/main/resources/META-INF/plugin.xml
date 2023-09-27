@@ -51,7 +51,7 @@
             nonDefaultProject="false"
         />
 
-        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersisentAccounts"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.api.SourcegraphApiRequestExecutor$Factory"/>
         <applicationService serviceImplementation="com.sourcegraph.cody.config.CachingCodyUserAvatarLoader"/>
         <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectActiveAccountHolder"/>
