@@ -16,10 +16,10 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/conf",
+        "//internal/conf/conftypes",
         "//internal/grpc/defaults",
         "//lib/errors",
         "//lib/pointers",
-        "//schema",
         "@com_github_google_uuid//:uuid",
         "@com_github_qdrant_go_client//qdrant",
         "@com_github_sourcegraph_log//:log",

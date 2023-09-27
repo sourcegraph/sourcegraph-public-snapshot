@@ -970,33 +970,55 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxFileSizeBytes:         maxFileSizeLimit,
 	}
 
-	computedQdrantConfig := conftypes.QdrantConfig{}
+	// Default values should match the documented defaults in site.schema.json.
+	computedQdrantConfig := conftypes.QdrantConfig{
+		Enabled: false,
+		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
+			EfConstruct:       nil,
+			FullScanThreshold: nil,
+			M:                 nil,
+			OnDisk:            true,
+			PayloadM:          nil,
+		},
+		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
+			IndexingThreshold: 0,
+			MemmapThreshold:   100,
+		},
+		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
+			Enabled:  true,
+			Quantile: 0.98,
+		},
+	}
 	if embeddingsConfig.Qdrant != nil {
-		// Default values should match the documented defaults in site.schema.json.
 		qc := embeddingsConfig.Qdrant
 		computedQdrantConfig.Enabled = qc.Enabled
 
 		if qc.Hnsw != nil {
-			computedQdrantConfig.QdrantHNSWConfig = conftypes.QdrantHNSWConfig{
-				EfConstruct:       toUint64(qc.Hnsw.EfConstruct),
-				FullScanThreshold: toUint64(qc.Hnsw.FullScanThreshold),
-				M:                 toUint64(qc.Hnsw.M),
-				PayloadM:          toUint64(qc.Hnsw.PayloadM),
-				OnDisk:            pointers.Deref(qc.Hnsw.OnDisk, true),
+			computedQdrantConfig.QdrantHNSWConfig.EfConstruct = toUint64(qc.Hnsw.EfConstruct)
+			computedQdrantConfig.QdrantHNSWConfig.FullScanThreshold = toUint64(qc.Hnsw.FullScanThreshold)
+			computedQdrantConfig.QdrantHNSWConfig.M = toUint64(qc.Hnsw.M)
+			computedQdrantConfig.QdrantHNSWConfig.PayloadM = toUint64(qc.Hnsw.PayloadM)
+			if qc.Hnsw.OnDisk != nil {
+				computedQdrantConfig.QdrantHNSWConfig.OnDisk = *qc.Hnsw.OnDisk
 			}
 		}
 
 		if qc.Optimizers != nil {
-			computedQdrantConfig.QdrantOptimizersConfig = conftypes.QdrantOptimizersConfig{
-				IndexingThreshold: uint64(pointers.Deref(qc.Optimizers.IndexingThreshold, 0)),
-				MemmapThreshold:   uint64(pointers.Deref(qc.Optimizers.MemmapThreshold, 100)),
+			if qc.Optimizers.IndexingThreshold != nil {
+				computedQdrantConfig.QdrantOptimizersConfig.IndexingThreshold = uint64(*qc.Optimizers.IndexingThreshold)
+			}
+			if qc.Optimizers.MemmapThreshold != nil {
+				computedQdrantConfig.QdrantOptimizersConfig.MemmapThreshold = uint64(*qc.Optimizers.MemmapThreshold)
 			}
 		}
 
 		if qc.Quantization != nil {
-			computedQdrantConfig.QdrantQuantizationConfig = conftypes.QdrantQuantizationConfig{
-				Enabled:  pointers.Deref(qc.Quantization.Enabled, true),
-				Quantile: float32(pointers.Deref(qc.Quantization.Quantile, 0.98)),
+			if qc.Quantization.Enabled != nil {
+				computedQdrantConfig.QdrantQuantizationConfig.Enabled = *qc.Quantization.Enabled
+			}
+
+			if qc.Quantization.Quantile != nil {
+				computedQdrantConfig.QdrantQuantizationConfig.Quantile = float32(*qc.Quantization.Quantile)
 			}
 		}
 	}

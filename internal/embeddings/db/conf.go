@@ -45,7 +45,7 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 			newConn, newErr := defaults.Dial(newAddr, logger)
 			oldAddr = newAddr
 			old := ptr.Swap(&connAndErr{newConn, newErr})
-			if old.conn != nil {
+			if old != nil && old.conn != nil {
 				old.conn.Close()
 			}
 		}
