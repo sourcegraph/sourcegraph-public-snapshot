@@ -22,4 +22,7 @@ import (
 
 	// Used for cody-gateway to generate a GraphQL client
 	_ "github.com/Khan/genqlient"
+
+	// Used to generate protojson schema
+	_ "github.com/chrusty/protoc-gen-jsonschema"
 )

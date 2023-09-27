@@ -157,6 +157,13 @@ def go_dependencies():
         sum = "h1:Loe2ZjT5x3q1bcWwemqyqEi8p11/IV/ncFCeLYDpWC4=",
         version = "v2.4.0",
     )
+    go_repository(
+        name = "com_github_alecthomas_jsonschema",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/alecthomas/jsonschema",
+        sum = "h1:SM/PhkjhbeX1w/Jkv7dHFYDn2y4/88XZp3CIqVHsdcs=",
+        version = "v0.0.0-20210918223802-a1d3f4b43d7b",
+    )
 
     go_repository(
         name = "com_github_alecthomas_kingpin",
@@ -1132,6 +1139,14 @@ def go_dependencies():
         sum = "h1:+ZxhTpfpZlmchB58ih/LBHX52ky7w2VhQVKQMucy3Ic=",
         version = "v1.0.0",
     )
+    go_repository(
+        name = "com_github_chrusty_protoc_gen_jsonschema",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/chrusty/protoc-gen-jsonschema",
+        sum = "h1:2N7aoql3ExiL4CgOVV5CQQQ1xi+ecqMYZVhILQSfhC8=",
+        version = "v0.0.0-20230806074516-0ca6ba213e83",
+    )
+
     go_repository(
         name = "com_github_chzyer_logex",
         build_file_proto_mode = "disable_global",
@@ -3859,8 +3874,8 @@ def go_dependencies():
         name = "com_github_iancoleman_orderedmap",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/iancoleman/orderedmap",
-        sum = "h1:i462o439ZjprVSFSZLZxcsoAe592sZB1rci2Z8j4wdk=",
-        version = "v0.0.0-20190318233801-ac98e3ecb4b0",
+        sum = "h1:sq1N/TFpYH++aViPcaKjys3bDClUEU7s5B+z6jq8pNA=",
+        version = "v0.2.0",
     )
 
     go_repository(
