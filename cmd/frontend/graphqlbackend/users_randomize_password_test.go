@@ -24,11 +24,15 @@ func TestRandomizeUserPassword(t *testing.T) {
 			SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}},
 				EmailSmtp:     &schema.SMTPServerConfig{},
-			}}
+				ExternalURL:   "http://example.com",
+			},
+		}
 		smtpDisabledConf = &conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}},
-			}}
+				ExternalURL:   "http://example.com",
+			},
+		}
 	)
 
 	db := dbmocks.NewMockDB()
