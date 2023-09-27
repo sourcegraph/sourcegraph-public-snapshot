@@ -149,7 +149,7 @@ func (s *Service) gatherLocations(
 	var visibleUploads []visibleUpload
 
 	// N.B.: cursor is purposefully re-assigned here
-	visibleUploads, cursor, err = s.newGetVisibleUploadsFromCursor(
+	visibleUploads, cursor, err = s.getVisibleUploadsFromCursor(
 		ctx,
 		args,
 		requestState,
@@ -275,7 +275,7 @@ func (s *Service) gatherLocationsBySymbolNames(
 	return allLocations, cursor, nil
 }
 
-func (s *Service) newGetVisibleUploadsFromCursor(
+func (s *Service) getVisibleUploadsFromCursor(
 	ctx context.Context,
 	args PositionalRequestArgs,
 	requestState RequestState,

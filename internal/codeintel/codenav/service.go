@@ -915,52 +915,6 @@ func copyDumps(uploadDumps []uploadsshared.Dump) []uploadsshared.Dump {
 // the set of visible uploads have changed since the previous request for the same result set.
 var ErrConcurrentModification = errors.New("result set changed while paginating")
 
-// getVisibleUploadsFromCursor returns the current target path and the given position for each upload
-// visible from the current target commit. If an upload cannot be adjusted, it will be omitted from
-// the returned slice. The returned slice will be cached on the given cursor. If this data is already
-// stashed on the given cursor, the result is recalculated from the cursor data/resolver context, and
-// we don't need to hit the database.
-//
-// An error is returned if the set of visible uploads has changed since the previous request of this
-// result set (specifically if an index becomes invisible). This behavior may change in the future.
-func (s *Service) getVisibleUploadsFromCursor(ctx context.Context, line, character int, cursorsToVisibleUploads *[]CursorToVisibleUpload, r RequestState) ([]visibleUpload, []CursorToVisibleUpload, error) {
-	if *cursorsToVisibleUploads != nil {
-		visibleUploads := make([]visibleUpload, 0, len(*cursorsToVisibleUploads))
-		for _, u := range *cursorsToVisibleUploads {
-			upload, ok := r.dataLoader.GetUploadFromCacheMap(u.DumpID)
-			if !ok {
-				return nil, nil, ErrConcurrentModification
-			}
-
-			visibleUploads = append(visibleUploads, visibleUpload{
-				Upload:                upload,
-				TargetPath:            u.TargetPath,
-				TargetPosition:        u.TargetPosition,
-				TargetPathWithoutRoot: u.TargetPathWithoutRoot,
-			})
-		}
-
-		return visibleUploads, *cursorsToVisibleUploads, nil
-	}
-
-	visibleUploads, err := s.getVisibleUploads(ctx, line, character, r)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	updatedCursorsToVisibleUploads := make([]CursorToVisibleUpload, 0, len(visibleUploads))
-	for i := range visibleUploads {
-		updatedCursorsToVisibleUploads = append(updatedCursorsToVisibleUploads, CursorToVisibleUpload{
-			DumpID:                visibleUploads[i].Upload.ID,
-			TargetPath:            visibleUploads[i].TargetPath,
-			TargetPosition:        visibleUploads[i].TargetPosition,
-			TargetPathWithoutRoot: visibleUploads[i].TargetPathWithoutRoot,
-		})
-	}
-
-	return visibleUploads, updatedCursorsToVisibleUploads, nil
-}
-
 // getVisibleUploads adjusts the current target path and the given position for each upload visible
 // from the current target commit. If an upload cannot be adjusted, it will be omitted from the
 // returned slice.
