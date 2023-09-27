@@ -141,6 +141,25 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	})
 }
 
+func TestRescheduleAll(t *testing.T) {
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := db.Repos()
+	ctx := context.Background()
+
+	repo1 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	err := repoStore.Create(ctx, repo1)
+	require.NoError(t, err)
+
+	repo2 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph2", URI: "github.com/sourcegraph/sourcegraph2", ExternalRepo: api.ExternalRepoSpec{}}
+	err = repoStore.Create(ctx, repo1)
+	require.NoError(t, err)
+
+	store := NewRepoEmbeddingJobsStore(db)
+}
+
 func TestCancelRepoEmbeddingJob(t *testing.T) {
 	t.Parallel()
 

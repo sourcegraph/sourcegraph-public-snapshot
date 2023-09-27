@@ -163,6 +163,18 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) MigrateToQdrant(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
+	ec := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if ec == nil || !ec.Qdrant.Enabled {
+		return nil, errors.New("qdrant is not enabled")
+	}
+
+}
+
 func (r *Resolver) CancelRepoEmbeddingJob(ctx context.Context, args graphqlbackend.CancelRepoEmbeddingJobArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {

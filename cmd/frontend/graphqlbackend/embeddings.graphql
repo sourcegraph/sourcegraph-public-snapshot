@@ -87,6 +87,8 @@ extend type Query {
         """
         state: String
     ): RepoEmbeddingJobsConnection!
+
+    migrateToQdrant(): EmptyResponse!
 }
 
 extend type Mutation {
