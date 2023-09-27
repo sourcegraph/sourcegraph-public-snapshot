@@ -14,7 +14,8 @@ import (
 // is to make it easier to identify that a given string (in a file, document, etc.) is a secret
 // Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
 const PersonalAccessTokenPrefix = "sgph_"
-const LocalInstanceIdentifier = "local" // TODO: Does this string need to be fixed length?
+const LocalInstanceIdentifier = "local"
+const InstanceIdentifierLength = 10
 
 // ParseAccessToken parses a personal access token to remove prefixes and extract the <token> that is stored in the database
 // Personal access tokens can take several forms:
@@ -28,6 +29,7 @@ func ParsePersonalAccessToken(token string) (string, error) {
 		token = strings.TrimPrefix(token, prefix)
 	}
 
+	// TODO: Side-effect of this is that it will strip any prefix, e.g. asdf_<token>
 	// Remove <instance-identifier> from token, if present
 	tokenParts := strings.Split(token, "_")
 	switch len(tokenParts) {
@@ -47,22 +49,22 @@ func ParsePersonalAccessToken(token string) (string, error) {
 // GeneratePersonalAccessToken generates a new personal access token.
 // It returns the full token string, and the byte representation of the access token.
 // Personal access tokens have the form: sgph_<instance-identifier>_<token>
-func GeneratePersonalAccessToken(licenseKey string) (string, [20]byte, error) {
+func GeneratePersonalAccessToken(licenseKey string, isDevInstance bool) (string, [20]byte, error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return "", b, err
 	}
 
-	// TODO: Ensure this works for local dev instances - do they have pre-set license keys?
 	// Include part of the hashed license key in the token, to allow us to tie tokens back to an instance
-	var licenseKeyHash string
-	if licenseKey != "" {
-		licenseKeyHash = hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(licenseKey)))[:6]
+	// If no license key is set or this is a dev instance, use a placeholder value
+	var instanceIdentifier string
+	if isDevInstance || licenseKey == "" {
+		instanceIdentifier = LocalInstanceIdentifier
 	} else {
-		licenseKeyHash = LocalInstanceIdentifier
+		instanceIdentifier = hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(licenseKey)))[:InstanceIdentifierLength]
 	}
 
-	token := fmt.Sprintf("%s%s_%s", PersonalAccessTokenPrefix, licenseKeyHash, hex.EncodeToString(b[:]))
+	token := fmt.Sprintf("%s%s_%s", PersonalAccessTokenPrefix, instanceIdentifier, hex.EncodeToString(b[:]))
 
 	return token, b, nil
 }
