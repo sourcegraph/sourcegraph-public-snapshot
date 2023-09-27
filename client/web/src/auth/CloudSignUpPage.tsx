@@ -108,6 +108,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 gitlabLabel="Continue with GitLab"
                 googleLabel="Continue with Google"
                 onClick={logEventAndSetFlags}
+                ctaClassName={styles.externalsAuthButton}
             />
 
             <div className="mb-4">
