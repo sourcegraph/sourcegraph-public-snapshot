@@ -8,10 +8,10 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -1004,7 +1004,7 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 		if config.App.DotcomAuthToken == "" {
 			return ""
 		}
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		return accesstoken.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
 	}
 	// Otherwise, use the current license key to compute an access token.
 	if config.LicenseKey == "" {
