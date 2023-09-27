@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -165,6 +164,7 @@ func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int
 // is to make it easier to identify that a given string (in a file, document, etc.) is a secret
 // Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
 const personalAccessTokenPrefix = "sgph_"
+const localInstanceIdentifier = "local" // TODO: Does this string need to be fixed length?
 
 func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
 	var b [20]byte
@@ -175,10 +175,11 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 	// Include part of the hashed license key in the token, to allow us to tie tokens back to an instance
 	config := conf.Get().SiteConfig()
 	var licenseKeyHash string
+	// TODO: Ensure this works for local dev instances - do they have pre-set license keys?
 	if config.LicenseKey != "" {
 		licenseKeyHash = hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(config.LicenseKey)))[:6]
 	} else {
-		licenseKeyHash = "localx" // TODO: This string must be 6 characters
+		licenseKeyHash = localInstanceIdentifier
 	}
 
 	token = fmt.Sprintf("%s%s_%s", personalAccessTokenPrefix, licenseKeyHash, hex.EncodeToString(b[:]))
@@ -456,25 +457,37 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 }
 
 // tokenSHA256Hash returns the 32-byte long SHA-256 hash of its hex-encoded value
-// (after stripping the "sgph_" token prefix, if present).
+// (after stripping the "sgph_" or "sgp_" token prefix and instance identifier, if present).
 func tokenSHA256Hash(token string) ([]byte, error) {
-	// TODO: Tidy this up
+	// Iterate through all prefixes used by previous versions of Sourcegraph and remove them
 	oldPersonalAccessTokenPrefixes := []string{"sgp_"}
 	for _, prefix := range append(oldPersonalAccessTokenPrefixes, personalAccessTokenPrefix) {
 		token = strings.TrimPrefix(token, prefix)
 	}
 
-	// TODO: Consider swapping order of operations here to allow us to validate token formats more precisely
-	// e.g. Only allow sgp_{40} or sgph_{6}_{40}
-
-	tokenRegex := lazyregexp.New("^[a-zA-Z0-9]{0,6}_?([a-zA-Z0-9]{40})$")
-	tokenMatches := tokenRegex.FindStringSubmatch(token)
-	if len(tokenMatches) <= 1 {
+	// Split a token of the form <instance_identifier>_<token> to extract just <token>.
+	// If no instance identifier is present, return the full token.
+	tokenParts := strings.Split(token, "_")
+	switch len(tokenParts) {
+	case 1:
+		// No instance identifier present, return full token
+		token = tokenParts[0]
+	case 2:
+	// Instance identifier present, return second part of token
+	default:
 		return nil, errors.New("invalid token format")
 	}
-	tokenValue := tokenMatches[1]
 
-	value, err := hex.DecodeString(tokenValue)
+	// TODO: Consider swapping order of operations here to allow us to validate token formats more precisely
+	// e.g. Only allow sgp_{40} or sgph_{6}_{40}
+	// tokenRegex := lazyregexp.New("^[a-zA-Z0-9]{0,6}_?([a-zA-Z0-9]{40})$")
+	// tokenMatches := tokenRegex.FindStringSubmatch(token)
+	// if len(tokenMatches) <= 1 {
+	// 	return nil, errors.New("invalid token format")
+	// }
+	// tokenValue := tokenMatches[1]
+
+	value, err := hex.DecodeString(token)
 	if err != nil {
 		return nil, InvalidTokenError{err}
 	}
