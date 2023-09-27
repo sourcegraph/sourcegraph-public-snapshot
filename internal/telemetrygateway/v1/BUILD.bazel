@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//dev:proto.bzl", "write_proto_stubs_to_source")
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 proto_library(
     name = "v1_proto",
@@ -98,16 +97,13 @@ go_test(
 )
 
 genrule(
-    name = "generate_jsonschema",
+    name = "generate_docs",
     srcs = ["telemetrygateway.proto"],
-    outs = ["jsonschema/RecordEventsRequest.json"],
-    cmd = "protoc --jsonschema_out=./internal/telemetrygateway/v1/jsonschema --proto_path=internal/telemetrygateway/v1 $(location telemetrygateway.proto) $(location genql.yaml) && mv internal/telemetrygateway/v1/jsonschema/RecordEventsRequest.json $@",
-    tools = ["@com_github_chrusty_protoc_gen_jsonschema//cmd/protoc-gen-jsonschema"],
-)
-
-write_generated_to_source_files(
-    name = "write_jsonschema",
-    src = ":generate_jsonschema",
-    files = ["jsonschema/RecordEventsRequest.json"],
-    tags = ["go_generate"],
+    outs = ["outputs/protocol.md"],
+    cmd = """
+        mkdir -p $(@D)/outputs
+        protoc --doc_out=$(@D) --doc_opt=markdown,protocol.md $(location telemetrygateway.proto)
+    """,
+    visibility = ["//doc/dev/background-information/telemetry:__pkg__"],
+    tools = ["@com_github_pseudomuto_protoc_gen_doc//cmd/protoc-gen-doc"],
 )

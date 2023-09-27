@@ -58,11 +58,11 @@ replace (
 )
 
 require (
-	cloud.google.com/go/bigquery v1.52.0
-	cloud.google.com/go/kms v1.12.1
-	cloud.google.com/go/monitoring v1.15.1
+	cloud.google.com/go/bigquery v1.55.0
+	cloud.google.com/go/kms v1.15.2
+	cloud.google.com/go/monitoring v1.16.0
 	cloud.google.com/go/profiler v0.3.1
-	cloud.google.com/go/pubsub v1.32.0
+	cloud.google.com/go/pubsub v1.33.0
 	cloud.google.com/go/secretmanager v1.11.1
 	cloud.google.com/go/storage v1.30.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.41.0
@@ -233,18 +233,18 @@ require (
 	go.uber.org/automaxprocs v1.5.2
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.26.0
-	golang.org/x/crypto v0.12.0
-	golang.org/x/net v0.14.0
+	golang.org/x/crypto v0.13.0
+	golang.org/x/net v0.15.0
 	golang.org/x/oauth2 v0.10.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.12.0
 	golang.org/x/time v0.3.0
 	// golang.org/x/tools should not be upgraded until https://github.com/bazelbuild/bazel-gazelle/issues/1579
 	// is resolved.
-	golang.org/x/tools v0.10.0
+	golang.org/x/tools v0.13.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.132.0
-	google.golang.org/genproto v0.0.0-20230717213848-3f92550aa753 // indirect
+	google.golang.org/genproto v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -261,7 +261,6 @@ require (
 require (
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
 	github.com/aws/jsii-runtime-go v1.84.0
-	github.com/chrusty/protoc-gen-jsonschema v0.0.0-20230806074516-0ca6ba213e83
 	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/gorilla/handlers v1.5.1
@@ -285,7 +284,7 @@ require (
 	go.opentelemetry.io/collector/config/configtelemetry v0.81.0
 	go.opentelemetry.io/collector/config/configtls v0.81.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20230717213848-3f92550aa753
+	google.golang.org/genproto/googleapis/api v0.0.0-20230920204549-e6e6cdab5c13
 )
 
 require (
@@ -333,6 +332,7 @@ require (
 	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/knadh/koanf/v2 v2.0.1 // indirect
+	github.com/lyft/protoc-gen-star/v2 v2.0.3 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
@@ -348,6 +348,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skeema/knownhosts v1.1.1 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
+	github.com/spf13/afero v1.10.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
@@ -367,14 +368,14 @@ require (
 	go.opentelemetry.io/collector/processor v0.81.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230717213848-3f92550aa753 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920183334-c177e329c48b // indirect
 )
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
-	cloud.google.com/go v0.110.4 // indirect
-	cloud.google.com/go/compute v1.22.0 // indirect
-	cloud.google.com/go/iam v1.1.1 // indirect
+	cloud.google.com/go v0.110.8 // indirect
+	cloud.google.com/go/compute v1.23.0 // indirect
+	cloud.google.com/go/iam v1.1.2 // indirect
 	code.gitea.io/gitea v1.18.0
 	cuelang.org/go v0.4.3
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -431,7 +432,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/emirpasic/gods v1.18.1 // indirect
-	github.com/envoyproxy/protoc-gen-validate v0.10.1 // indirect
+	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 // indirect
@@ -479,7 +480,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hexops/autogold/v2 v2.1.0
 	github.com/hexops/gotextdiff v1.0.3
-	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/gojq v0.12.11 // indirect
@@ -540,8 +541,8 @@ require (
 	github.com/prometheus/client_model v0.4.0
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/prometheus/procfs v0.11.0 // indirect
-	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
-	github.com/pseudomuto/protokit v0.2.0 // indirect
+	github.com/pseudomuto/protoc-gen-doc v1.5.1
+	github.com/pseudomuto/protokit v0.2.1 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/rs/cors v1.9.0 // indirect
@@ -581,7 +582,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	golang.org/x/mod v0.12.0
-	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/term v0.12.0 // indirect
 	golang.org/x/text v0.13.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
