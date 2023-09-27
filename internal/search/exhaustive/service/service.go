@@ -166,7 +166,6 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	iter := s.getJobLogsIter(ctx, id)
 
 	cw := csv.NewWriter(w)
-	defer cw.Flush()
 
 	header := []string{
 		"repository",
@@ -196,7 +195,13 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 		}
 	}
 
-	return iter.Err()
+	if err := iter.Err(); err != nil {
+		return err
+	}
+
+	// Flush data before checking for any final write errors.
+	cw.Flush()
+	return cw.Error()
 }
 
 // JobLogsIterLimit is the number of lines the iterator will read from the
