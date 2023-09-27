@@ -33,6 +33,8 @@ class CodyLoginPanel(
       CodyTokenCredentialsUi(
           serverTextField, customRequestHeadersField, executorFactory, isAccountUnique)
 
+  private var authUI = CodyAuthCredentialsUi(executorFactory, isAccountUnique)
+
   private val progressIcon = AnimatedIcon.Default()
   private val progressExtension = ExtendableTextComponent.Extension { progressIcon }
 
@@ -131,4 +133,6 @@ class CodyLoginPanel(
   }
 
   fun setTokenUi() = applyUi(tokenUi)
+
+  fun setAuthUI() = applyUi(authUI)
 }
