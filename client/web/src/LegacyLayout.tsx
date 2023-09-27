@@ -32,7 +32,7 @@ import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { isAccessTokenCallbackPage } from './user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
-import { useDevSettings } from './stores'
+import { useDeveloperSettings } from './stores'
 import { DeveloperDialog } from './devsettings/DeveloperDialog'
 
 const LazySetupWizard = lazyComponent(() => import('./setup-wizard/SetupWizard'), 'SetupWizard')
@@ -82,7 +82,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
-    const {showDialog: showDeveloperDialog} = useDevSettings()
+    const showDeveloperDialog = useDeveloperSettings(state => state.showDialog)
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings, or it's the Cody app
         fuzzyFinder: features.fuzzyFinder ?? !props.isCodyApp,
@@ -288,7 +288,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     userHistory={userHistory}
                 />
             )}
-            {showDeveloperDialog && <DeveloperDialog authenticatedUser={props.authenticatedUser} />}
+            {showDeveloperDialog && <DeveloperDialog />}
             <SearchQueryStateObserver
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}

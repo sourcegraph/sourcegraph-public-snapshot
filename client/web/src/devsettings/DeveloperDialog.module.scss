@@ -48,7 +48,6 @@
         }
 
         tr.override > td {
-            font-style: italic;
             color: var(--orange);
         }
 
@@ -56,15 +55,21 @@
             white-space: nowrap;
         }
 
-        td + td {
-            text-align: center;
-        }
-
         td:nth-child(2) > button {
             text-decoration: underline;
             color: inherit;
             font-style: inherit;
             font-weight: inherit;
+        }
+
+        .actions {
+            visibility: hidden;
+            display: flex;
+
+        }
+
+        tr:hover .actions {
+            visibility: visible;
         }
     }
 
