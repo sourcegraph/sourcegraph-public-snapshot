@@ -35,7 +35,8 @@ func ParsePersonalAccessToken(token string) (string, error) {
 		// No instance identifier present, return full token
 		token = tokenParts[0]
 	case 2:
-	// Instance identifier present, return second part of token
+		// Instance identifier present, return second part of token
+		token = tokenParts[1]
 	default:
 		return "", errors.New("invalid token format")
 	}
