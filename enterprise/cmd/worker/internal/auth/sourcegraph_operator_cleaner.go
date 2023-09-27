@@ -175,6 +175,7 @@ GROUP BY user_id
 	if err := h.db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
 		IDs:         deleteExternalAccountIDs,
 		ServiceType: auth.SourcegraphOperatorProviderType,
+		HardDelete:  true,
 	}); err != nil && !errcode.IsNotFound(err) {
 		return errors.Wrap(err, "remove SOAP accounts")
 	}

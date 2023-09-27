@@ -58,6 +58,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	//   5. cris, who has a non-SOAP external account and is not a site admin (will not be changed)
 	//   6. cami, who is an expired SOAP user and is a service account (will not be changed)
 	//   7. dani, who has no external accounts and is not a site admin (will not be changed)
+	//   8. alex, who has a very old soft-deleted SOAP account and is also currently a SOAP user
 	// In all of the above, SOAP users are also made site admins.
 	// The lists below indicate who will and will not be deleted or otherwise
 	// modified.
