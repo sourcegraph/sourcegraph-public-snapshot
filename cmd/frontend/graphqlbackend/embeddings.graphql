@@ -88,6 +88,10 @@ extend type Query {
         state: String
     ): RepoEmbeddingJobsConnection!
 
+    """
+    TEMPORARY: creates a new embedding job for all completed embeddings
+    jobs so that they will be moved from blobstore to qdrant
+    """
     migrateToQdrant(): EmptyResponse!
 }
 

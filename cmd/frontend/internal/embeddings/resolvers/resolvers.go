@@ -173,6 +173,7 @@ func (r *Resolver) MigrateToQdrant(ctx context.Context) (*graphqlbackend.EmptyRe
 		return nil, errors.New("qdrant is not enabled")
 	}
 
+	return &graphqlbackend.EmptyResponse{}, r.repoEmbeddingJobsStore.RescheduleAllRepos(ctx)
 }
 
 func (r *Resolver) CancelRepoEmbeddingJob(ctx context.Context, args graphqlbackend.CancelRepoEmbeddingJobArgs) (*graphqlbackend.EmptyResponse, error) {
