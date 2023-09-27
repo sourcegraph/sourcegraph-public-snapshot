@@ -991,8 +991,8 @@
       "group": "External services",
       "additionalProperties": false,
       "default": {
-        "interval": 15,
-        "deletedTTL": 60
+        "intervalMinutes": 15,
+        "deletedTTLMinutes": 60
       },
       "properties": {
         "intervalMinutes": {

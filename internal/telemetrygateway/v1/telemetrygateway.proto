@@ -30,11 +30,20 @@ message Identifier {
   message LicensedInstanceIdentifier {
     // License key configured in the Sourcegraph instance emitting the event.
     string license_key = 1;
+    // Self-reported Sourcegraph instance identifier.
+    string instance_id = 2;
+  }
+
+  message UnlicensedInstanceIdenfitier {
+    // Self-reported Sourcegraph instance identifier.
+    string instance_id = 1;
   }
 
   oneof identifier {
     // A licensed Sourcegraph instance.
     LicensedInstanceIdentifier licensed_instance = 1;
+    // An unlicensed Sourcegraph instance.
+    UnlicensedInstanceIdenfitier unlicensed_instance = 2;
   }
 }
 
