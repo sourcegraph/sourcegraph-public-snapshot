@@ -2,22 +2,25 @@ package background
 
 import (
 	"bytes"
-	"net/url"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestEmail(t *testing.T) {
 	template := txemail.MustParseTemplate(newSearchResultsEmailTemplates)
 
-	MockExternalURL = func() *url.URL {
-		externalURL, _ := url.Parse("https://www.sourcegraph.com")
-		return externalURL
-	}
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExternalURL: "https://www.sourcegraph.com",
+		},
+	})
+	defer conf.Mock(nil)
 
 	t.Run("test message", func(t *testing.T) {
 		templateData := NewTestTemplateDataForNewSearchResults("My test monitor")

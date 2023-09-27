@@ -14,7 +14,7 @@ import type { TourConfig } from '../../tour/data'
 // supposed to be clicked)
 const userrepo = '$$userrepo'
 const userlang = '$$userlang'
-const userorg = '$$userorg'
+const useremail = '$$useremail'
 
 // To avoid running actual search queries in the preview, every
 // query successful
@@ -66,7 +66,7 @@ export const TourPreview: FC<{ config: TourConfig }> = ({ config }) => {
                     value={{
                         onStepClick: noop,
                         onRestart: noop,
-                        userConfig: { userlang, userrepo, userorg },
+                        userInfo: { language: userlang, repo: userrepo, email: useremail },
                         isQuerySuccessful,
                     }}
                 >

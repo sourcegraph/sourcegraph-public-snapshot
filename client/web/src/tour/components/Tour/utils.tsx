@@ -13,8 +13,14 @@ import {
     observeMessages,
     type SearchEvent,
 } from '@sourcegraph/shared/src/search/stream'
+import type { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
+import type { UserOnboardingConfig } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 
 import { SearchPatternType } from '../../../graphql-operations'
+
+export function isNotNullOrUndefined<T>(value: T): value is NonNullable<T> {
+    return value !== null && value !== undefined
+}
 
 /**
  * Returns a new URL w/ tour state tracking query parameters. This is used to show/hide tour task info box.
@@ -104,4 +110,38 @@ export function isQuerySuccessful(query: string): Promise<boolean> {
     return fetchStreamSuggestions(dynamicQuery)
         .then(results => results.length > 0)
         .catch(() => false)
+}
+
+export enum QueryPlaceholder {
+    Snippet = '$$snippet',
+    Repo = '$$userrepo',
+    Lang = '$$userlang',
+    Email = '$$useremail',
+}
+
+export function containsPlaceholder(queryTemplate: string, placeholder: QueryPlaceholder): boolean {
+    return queryTemplate.includes(placeholder)
+}
+
+/**
+ * Returns true if the provided step can be executed by the user. This is true for all steps except
+ * for search query steps which can depend on user specific information (preferred repo, language, ...).
+ * If this information is used in a query but not provided by the user then we don't want to show this step.
+ */
+export function canRunStep(step: TourTaskStepType, userInfo: UserOnboardingConfig['userinfo']): boolean {
+    switch (step.action.type) {
+        case 'search-query': {
+            const action = step.action
+            const placeholders: [QueryPlaceholder, string | undefined][] = [
+                [QueryPlaceholder.Repo, userInfo?.repo],
+                [QueryPlaceholder.Lang, userInfo?.language],
+                [QueryPlaceholder.Email, userInfo?.email],
+            ]
+            return placeholders.every(
+                ([placeholder, value]) => !containsPlaceholder(action.query, placeholder) || !!value
+            )
+        }
+        default:
+            return true
+    }
 }

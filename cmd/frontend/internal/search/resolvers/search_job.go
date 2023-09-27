@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
@@ -37,11 +36,6 @@ type searchJobResolver struct {
 	Job *types.ExhaustiveSearchJob
 	db  database.DB
 	svc *service.Service
-
-	// call initStats to access stats and statsErr
-	once     sync.Once
-	statsErr error
-	stats    *types.RepoRevJobStats
 }
 
 func (r *searchJobResolver) ID() graphql.ID {
@@ -53,23 +47,11 @@ func (r *searchJobResolver) Query() string {
 }
 
 func (r *searchJobResolver) State(ctx context.Context) string {
-	// Once a search job has started processing, we have to look at the aggregate
-	// state of all sub-jobs to determine the state.
-	if r.Job.State == types.JobStateProcessing || r.Job.State == types.JobStateCompleted {
-		stats, statsErr := r.initStats(ctx)
-
-		if statsErr != nil || stats.Failed > 0 {
-			return types.JobStateFailed.ToGraphQL()
-		}
-
-		if stats.InProgress > 0 {
-			return types.JobStateProcessing.ToGraphQL()
-		}
-
-		return types.JobStateCompleted.ToGraphQL()
-	} else {
-		return r.Job.State.ToGraphQL()
+	// We don't set the AggState during job creation
+	if r.Job.AggState != "" {
+		return r.Job.AggState.ToGraphQL()
 	}
+	return r.Job.State.ToGraphQL()
 }
 
 func (r *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
@@ -94,7 +76,7 @@ func (r *searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
 
 func (r *searchJobResolver) URL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(globals.ExternalURLString(), fmt.Sprintf("/.api/search/export/%d.csv", r.Job.ID))
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.csv", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +87,7 @@ func (r *searchJobResolver) URL(ctx context.Context) (*string, error) {
 
 func (r *searchJobResolver) LogURL(ctx context.Context) (*string, error) {
 	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(globals.ExternalURLString(), fmt.Sprintf("/.api/search/export/%d.log", r.Job.ID))
+		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.log", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
@@ -114,23 +96,10 @@ func (r *searchJobResolver) LogURL(ctx context.Context) (*string, error) {
 	return nil, nil
 }
 
-func (r *searchJobResolver) initStats(ctx context.Context) (*types.RepoRevJobStats, error) {
-	r.once.Do(func() {
-		repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
-		if err != nil {
-			r.statsErr = err
-			return
-		}
-		r.stats = repoRevStats
-	})
-
-	return r.stats, r.statsErr
-}
-
 func (r *searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
-	stats, statsErr := r.initStats(ctx)
-	if statsErr != nil {
-		return nil, statsErr
+	repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
+	if err != nil {
+		return nil, err
 	}
-	return &searchJobStatsResolver{stats}, nil
+	return &searchJobStatsResolver{repoRevStats}, nil
 }

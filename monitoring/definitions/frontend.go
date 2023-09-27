@@ -786,17 +786,24 @@ func Frontend() *monitoring.Dashboard {
 				Rows: []monitoring.Row{{
 					{
 						Name:        "email_delivery_failures",
-						Description: "email delivery failures every 30 minutes",
-						Query:       `sum(increase(src_email_send{success="false"}[30m]))`,
-						Panel:       monitoring.Panel().LegendFormat("failures"),
-						Warning:     monitoring.Alert().GreaterOrEqual(1),
-						Critical:    monitoring.Alert().GreaterOrEqual(2),
+						Description: "email delivery failure rate over 30 minutes",
+						Query:       `sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100`,
+						Panel: monitoring.Panel().
+							LegendFormat("failures").
+							Unit(monitoring.Percentage).
+							Max(100).Min(0),
+
+						// Any failure is worth warning on, as failed email
+						// deliveries directly impact user experience.
+						Warning:  monitoring.Alert().Greater(0),
+						Critical: monitoring.Alert().GreaterOrEqual(10),
 
 						Owner: monitoring.ObservableOwnerDevOps,
 						NextSteps: `
 							- Check your SMTP configuration in site configuration.
-							- Check frontend logs for more detailed error messages.
+							- Check 'sourcegraph-frontend' logs for more detailed error messages.
 							- Check your SMTP provider for more detailed error messages.
+							- Use 'sum(increase(src_email_send{success="false"}[30m]))' to check the raw count of delivery failures.
 						`,
 					},
 				}, {

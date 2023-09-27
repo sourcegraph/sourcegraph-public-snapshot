@@ -71,6 +71,15 @@ func TestExhaustiveSearch(t *testing.T) {
 	{
 		jobs, err := svc.ListSearchJobs(userCtx, store.ListArgs{})
 		require.NoError(err)
+
+		// HACK: Don't test agg state. Here we compare a result from GetSearchJob and
+		// ListSearchJobs. However, AggState is only set in ListSearchJobs.
+		//
+		// We don't want to set AggState in GetSearchJob because it is fairly expensive,
+		// and we call GetSearchJob a lot as part of the security checks, so we want to
+		// keep it as lean as possible.
+		jobs[0].AggState = job.AggState
+
 		require.Equal([]*types.ExhaustiveSearchJob{job}, jobs)
 	}
 
@@ -121,6 +130,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		// only assert on State since the rest are non-deterministic.
 		require.Equal(types.JobStateCompleted, job2.State)
 		job2.WorkerJob = job.WorkerJob
+		job2.AggState = job.AggState
 		require.Equal(job, job2)
 	}
 
@@ -145,7 +155,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		lines := strings.Split(buf.String(), "\n")
 		// 1 header + 3 rows + 1 newline
 		require.Equal(5, len(lines), fmt.Sprintf("got %q", buf))
-		require.Equal("repo,rev,start,end,status,failure_message", lines[0])
+		require.Equal("Repository,Revision,Started at,Finished at,Status,Failure Message", lines[0])
 		// We should use the CSV reader to parse this but since we know none of the
 		// columns have a "," in the context of this test, this is fine.
 		require.Equal(6, len(strings.Split(lines[1], ",")))

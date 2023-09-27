@@ -95,8 +95,17 @@ func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			Ascending: !args.Descending,
-			OrderBy:   database.OrderBy{{Field: strings.ToLower(args.OrderBy)}, {Field: "id"}}},
+			OrderBy:   database.OrderBy{{Field: normalize(args.OrderBy)}, {Field: "id"}}},
 	)
+}
+
+func normalize(orderBy string) string {
+	switch orderBy {
+	case "STATE":
+		return "agg_state"
+	default:
+		return strings.ToLower(orderBy)
+	}
 }
 
 type searchJobsConnectionStore struct {
@@ -146,12 +155,12 @@ func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobR
 	switch column {
 	case "created_at":
 		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339Nano))
-	case "state":
+	case "agg_state":
 		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
 	case "query":
 		value = fmt.Sprintf("'%v'", node.Query())
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected one of (created_at, state, query). Actual: %s", column))
+		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected one of (created_at, agg_state, query). Actual: %s", column))
 	}
 
 	id, err := UnmarshalSearchJobID(node.ID())
@@ -195,7 +204,7 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 	switch column {
 	case "created_at":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case "state":
+	case "agg_state":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
 	case "query":
 		csv = fmt.Sprintf("%v, %v", values[0], values[1])
