@@ -1,4 +1,4 @@
-import { type FC, memo, useEffect } from 'react'
+import { type FC, memo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
