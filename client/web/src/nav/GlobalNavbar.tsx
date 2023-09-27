@@ -5,7 +5,6 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { type RouteObject, useLocation } from 'react-router-dom'
 
 import { isMacPlatform } from '@sourcegraph/common'
@@ -36,7 +35,6 @@ import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { isSearchJobsEnabled } from '../search-jobs/utility'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import type { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
@@ -55,7 +53,6 @@ export interface GlobalNavbarProps
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
-        SentinelProps,
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps,
@@ -129,7 +126,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isCodyApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
-    sentinelEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
@@ -154,12 +150,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const isLicensed = !!window.context?.licenseInfo || isCodyApp // Assume licensed when running as a native app
     const showBatchChanges = props.batchChangesEnabled && isLicensed && !isCodyApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
-
-    const [isSentinelEnabled] = useFeatureFlag('sentinel')
     const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding')
-    // TODO: Include isSourcegraphDotCom in subsequent PR
-    // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
-    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin && !isCodyApp
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -270,13 +261,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {showSentinel && (
-                        <NavItem icon={ShieldHalfFullIcon}>
-                            <NavLink variant={navLinkVariant} to="/sentinel">
-                                Sentinel
                             </NavLink>
                         </NavItem>
                     )}

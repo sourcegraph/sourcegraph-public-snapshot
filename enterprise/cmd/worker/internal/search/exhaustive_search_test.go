@@ -155,7 +155,7 @@ func TestExhaustiveSearch(t *testing.T) {
 		lines := strings.Split(buf.String(), "\n")
 		// 1 header + 3 rows + 1 newline
 		require.Equal(5, len(lines), fmt.Sprintf("got %q", buf))
-		require.Equal("Repository,Revision,Started at,Finished at,Status,Failure Message", lines[0])
+		require.Equal("repository,revision,started_at,finished_at,status,failure_message", lines[0])
 		// We should use the CSV reader to parse this but since we know none of the
 		// columns have a "," in the context of this test, this is fine.
 		require.Equal(6, len(strings.Split(lines[1], ",")))
