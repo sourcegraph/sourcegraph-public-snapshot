@@ -3,9 +3,7 @@ package com.sourcegraph.cody.config
 import com.intellij.collaboration.async.CompletableFutureUtil.submitIOTask
 import com.intellij.collaboration.async.CompletableFutureUtil.successOnEdt
 import com.intellij.collaboration.util.ProgressIndicatorsProvider
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
-import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.util.IconUtil
@@ -29,7 +27,7 @@ class CodyAccountDetailsProvider(
             ?: return CompletableFuture.completedFuture(noToken())
     val executor = service<SourcegraphApiRequestExecutor.Factory>().create(token)
     return ProgressManager.getInstance()
-        .submitIOTask(EmptyProgressIndicator()) {
+        .submitIOTask(indicator) {
           if (account.isCodyApp()) {
             val details = CodyAccountDetails(account.name, account.name, null)
             DetailsLoadingResult(details, IconUtil.toBufferedImage(defaultIcon), null, false)
@@ -43,7 +41,7 @@ class CodyAccountDetailsProvider(
             DetailsLoadingResult(accountDetails, image, null, false)
           }
         }
-        .successOnEdt(ModalityState.any()) {
+        .successOnEdt(indicator.modalityState) {
           accountsModel.accountsListModel.contentsChanged(account)
           it
         }

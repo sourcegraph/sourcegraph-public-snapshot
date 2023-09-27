@@ -1,6 +1,7 @@
 import React from 'react'
 
 import type { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
+import type { UserOnboardingConfig } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 
 interface TourContextType {
     /**
@@ -16,11 +17,7 @@ interface TourContextType {
     /**
      * Provides user specific values for dynamic queries.
      */
-    userConfig?: {
-        userrepo: string
-        userorg: string
-        userlang: string
-    }
+    readonly userInfo?: UserOnboardingConfig['userinfo']
 
     /**
      * The function to use for determining whether queries return results.

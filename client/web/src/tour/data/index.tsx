@@ -97,7 +97,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 label: 'Search commit titles and messages with-in a specific organization and repository',
                 action: {
                     type: 'search-query',
-                    query: 'repo:$$userorg/$$userrepo lang:$$userlang type:commit before:"last week"',
+                    query: 'repo:$$userrepo lang:$$userlang type:commit before:"last week"',
                 },
             },
         ],
@@ -111,7 +111,7 @@ export const authenticatedTasks: TourTaskType[] = [
                 label: 'Search diffs for changes in code via filters like before, after, and author',
                 action: {
                     type: 'search-query',
-                    query: 'repo:$$userorg/$$userrepo type:diff after:"last month" $$snippet',
+                    query: 'repo:$$userrepo type:diff after:"last month" $$snippet',
                 },
             },
         ],
