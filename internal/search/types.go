@@ -38,9 +38,6 @@ type Inputs struct {
 	Features               *Features
 	Protocol               Protocol
 	SanitizeSearchPatterns []*regexp.Regexp
-
-	// TODO(keegan) is this the best way to sneak this behaviour in?
-	Exhaustive bool // we adjust some behaviours if we are exhaustive search.
 }
 
 // MaxResults computes the limit for the query.
@@ -50,10 +47,17 @@ func (inputs Inputs) MaxResults() int {
 
 // DefaultLimit is the default limit to use if not specified in query.
 func (inputs Inputs) DefaultLimit() int {
-	if inputs.Protocol == Batch {
+	switch inputs.Protocol {
+	case Streaming:
+		return limits.DefaultMaxSearchResultsStreaming
+	case Batch:
 		return limits.DefaultMaxSearchResults
+	case Exhaustive:
+		return limits.DefaultMaxSearchResultsExhaustive
+	default:
+		// Default to our normal interactive path
+		return limits.DefaultMaxSearchResultsStreaming
 	}
-	return limits.DefaultMaxSearchResultsStreaming
 }
 
 type Mode int
@@ -63,11 +67,20 @@ const (
 	SmartSearch      = 1 << (iota - 1)
 )
 
+// Protocol encodes who the target client is and can be used to adjust default
+// limits (or other behaviour changes) in the search code.
 type Protocol int
 
 const (
+	// Streaming is our default interactive protocol. We use moderate default
+	// limits to avoid doing unnecessary work.
 	Streaming Protocol = iota
+	// Batch needs to finish searching in an interactive time, so has limits
+	// which are low.
 	Batch
+	// Exhaustive is run as a background job and as such has significantly
+	// higher default limits.
+	Exhaustive
 )
 
 func (p Protocol) String() string {
@@ -76,6 +89,8 @@ func (p Protocol) String() string {
 		return "Streaming"
 	case Batch:
 		return "Batch"
+	case Exhaustive:
+		return "Exhaustive"
 	default:
 		return fmt.Sprintf("unknown{%d}", p)
 	}
