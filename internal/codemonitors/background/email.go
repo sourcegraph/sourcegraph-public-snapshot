@@ -153,27 +153,6 @@ func getCommitURL(externalURL *url.URL, repoName, oid, utmSource string) string 
 	return sourcegraphURL(externalURL, fmt.Sprintf("%s/-/commit/%s", repoName, oid), "", utmSource)
 }
 
-<<<<<<< HEAD
-var (
-	externalURLOnce  sync.Once
-	externalURLValue *url.URL
-	externalURLError error
-)
-
-func getExternalURL() (*url.URL, error) {
-	if MockExternalURL != nil {
-		return MockExternalURL(), nil
-	}
-
-	externalURLOnce.Do(func() {
-		externalURLStr := conf.Get().ExternalURL
-		externalURLValue, externalURLError = url.Parse(externalURLStr)
-	})
-	return externalURLValue, externalURLError
-}
-
-=======
->>>>>>> b150dedb55 ([config]: Reverting External URL Update and Removal of sync.Once (#57057))
 func sourcegraphURL(externalURL *url.URL, path, query, utmSource string) string {
 	// Construct URL to the search query.
 	u := externalURL.ResolveReference(&url.URL{Path: path})
