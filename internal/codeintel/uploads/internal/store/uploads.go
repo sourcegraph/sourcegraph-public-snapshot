@@ -581,10 +581,14 @@ WITH
 ranked_uploads AS (
 	SELECT
 		u.id,
-		-- Rank each upload providing the same package from the same directory
-		-- within a repository by commit date. We'll choose the oldest commit
-		-- date as the canonical choice used to resolve the current definitions
-		-- request.
+		-- First, rank by repo stars (if they are populated on the instance).
+		-- This should give us the most popular (and assumed important) packages
+		-- first. Then, we rank each upload providing the same package from the
+		-- same directory within a repository by commit date. We'll choose the
+		-- oldest commit date from the candidates as the canonical choice used
+		-- to resolve the current definitions request. This alternate sorting is
+		-- the primary sorting outside of dotcom, and breaks ties for repos with
+		-- the same star counts.
 		repo.stars,
 		` + packageRankingQueryFragment + ` AS rank
 	FROM lsif_uploads u
