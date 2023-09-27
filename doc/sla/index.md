@@ -106,7 +106,7 @@ While we always strive to respond to your issues as quickly as possible, our SLA
 
 The following policy applies to both our cloud-based (managed instance) and on-premise/self-hosted Sourcegraph customers:
 
-### For enterprise plans
+## For enterprise plans
 
 | Severity level | Description | Response time | Support availability |
 | -------------- | ----------- | ------------- | -------------------- |
@@ -126,11 +126,11 @@ The following policy applies to both our cloud-based (managed instance) and on-p
 
 >NOTE: Premium support with enhanced SLAs can be added to your Enterprise plans as an add-on. Our business hours, defined as Sunday 2 PM PST to Friday 5 PM PST, align with our 24x5 support coverage.
 
-### Sourcegraph cloud SLA (managed instance)
+## Sourcegraph cloud SLA (managed instance)
 
 >NOTE: Effective: November 14, 2022 — Sourcegraph gives customers a 99.5% uptime commitment on the Business and Enterprise plans.
 
-#### Downtime
+### Downtime
 
 Downtime is the total number of minutes when the Sourcegraph Cloud instance was unavailable during a calendar month. Sourcegraph calculates unavailability using server monitoring software to assess server-side error rates, ping test outcomes, web server evaluations, TCP port examinations, and website tests.
 
@@ -144,11 +144,11 @@ The following items are not considered as part of downtime:
 - External network problems beyond our reasonable control, including connectivity issues involving the client's Internet Service Provider (ISP), Cloudflare, or Google Cloud Platform
 - Maintenance activities are conducted during Scheduled Downtime.
 
-#### Scheduled downtime
+### Scheduled downtime
 
 Scheduled downtime is occasionally required to maintain the proper functioning of your Sourcegraph Cloud instance. In case of such a scheduled downtime, we will provide you with a minimum of 48 hours' advance notice. Please note that the total scheduled downtime will be at most 10 hours in a quarter.
 
-#### Uptime commitment
+### Uptime commitment
 
 Uptime is the percentage of total possible minutes Sourcegraph was available during a calendar month. Our commitment is to maintain at least 99.5% uptime. You can calculate your uptime by using the following formula:
 
@@ -156,9 +156,9 @@ Uptime is the percentage of total possible minutes Sourcegraph was available dur
 [(total minutes in month - Downtime) / total minutes in month] > 99.5%
 ```
 
-#### Sev 0 - Emergency support scope
+### Sev 0 - Emergency support scope
 
-##### What constitutes a Sev 0 - Emergency?
+#### What constitutes a Sev 0 - Emergency?
 
 A Severity 0 - Emergency is defined by the following criteria:
 
@@ -167,7 +167,7 @@ A Severity 0 - Emergency is defined by the following criteria:
 - All users are unable to log in to the Sourcegraph instance. Authentication is not functioning, preventing user access
 - A security-related incident poses a significant risk or exposure to the system or data. This may include vulnerabilities, breaches, or other security issues that demand immediate attention to protect the instance and its users
 
-##### What is not a Sev 0 - Emergency?
+#### What is not a Sev 0 - Emergency?
 
 A Severity 0 - Emergency typically does not include the following situations:
 
@@ -189,22 +189,22 @@ Purchasing Premium Support provides several of the following services beyond tho
 
 ### Premium Support SLAs
 
-Premium Support SLAs gives customers access to our Support team 24x7 for Severity 0 and 1 issues that critically impact your instance and ability to use Sourcegraph.
+Premium Support SLAs give customers access to our Support team 24x7 for Severity 0 and 1 issues that critically impact your instance and ability to use Sourcegraph.
 
 First response times remain the same according to our SLAs. However, Emergency and Severe Impact issues are supported 24x7 with Premium Support (versus 24x5 without Premium Support).  
 
-This service is provided for all GA products Sourcegraph offers and not for any Experimental or Beta features (see here for more details).
+This service is provided for all GA products Sourcegraph offers, not for any Experimental or Beta features (see here for more details).
 
 >NOTE: This package includes access to Slack Support & Slack Account Management
 
 ### Dedicated Support
 
-Access to named senior support engineers that will have knowledge of your infrastructure and can help reduce the time needed to triage, diagnose and resolve an issue in your instance.
+Access to named senior support engineers who will have knowledge of your infrastructure and can help reduce the time needed to triage, diagnose, and resolve an issue in your instance.
 
 >NOTE: This package includes access to Slack Support & Slack Account Management
 
 ### Slack Support & Slack Account Management
 
-Slack Support provides access to creating tickets directly from Slack allowing customers to resolve tickets directly from a familiar interface and allows for greater collaboration between Support and customers.
+Slack Support provides access to creating tickets directly from Slack, allowing customers to resolve tickets directly from a familiar interface and allowing for greater collaboration between Support and customers.
 
-Slack Account Management allows customers to have direct access to their Account team including their Technical Advisor (if applicable) and can help resolve any non-technical issues or questions that come up.
+Slack Account Management allows customers direct access to their Account team, including their Technical Advisor (if applicable). It can help resolve any non-technical issues or questions that come up.
