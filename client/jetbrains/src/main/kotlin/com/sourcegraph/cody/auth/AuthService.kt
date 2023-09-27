@@ -8,6 +8,6 @@ interface AuthService {
   /** Starting the authorization flow */
   fun authorize(request: AuthRequest): CompletableFuture<String>
 
-  /** Exchanging code for credentials */
+  /** Processing received access token */
   fun handleServerCallback(path: String, accessToken: String): Boolean
 }
