@@ -16,15 +16,15 @@ import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.ServerAuthLoader
 import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.cody.config.SourcegraphServerPath.Companion.from
-import org.jetbrains.annotations.Contract
 import java.util.*
 import java.util.stream.Collectors
+import org.jetbrains.annotations.Contract
 
 object ConfigUtil {
   const val DOTCOM_URL = "https://sourcegraph.com"
   const val SERVICE_DISPLAY_NAME = "Sourcegraph"
   const val CODY_DISPLAY_NAME = "Cody"
-  const val CODY_SEARCH_DISPLAY_NAME = "Code Search"
+  const val CODE_SEARCH_DISPLAY_NAME = "Code Search"
   const val SOURCEGRAPH_DISPLAY_NAME = "Sourcegraph"
 
   @JvmStatic
@@ -32,18 +32,19 @@ object ConfigUtil {
     val serverAuth = ServerAuthLoader.loadServerAuth(project)
     val codyAgentCodebase = CodyAgent.getClient(project).codebase
 
-    val config = ExtensionConfiguration(
-      serverEndpoint = serverAuth.instanceUrl,
-      accessToken = serverAuth.accessToken,
-      customHeaders = getCustomRequestHeadersAsMap(serverAuth.customRequestHeaders),
-      proxy = UserLevelConfig.getProxy(),
-      autocompleteAdvancedServerEndpoint = UserLevelConfig.getAutocompleteServerEndpoint(),
-      autocompleteAdvancedAccessToken = UserLevelConfig.getAutocompleteAccessToken(),
-      autocompleteAdvancedEmbeddings = UserLevelConfig.getAutocompleteAdvancedEmbeddings(),
-      debug = isCodyDebugEnabled(),
-      verboseDebug = isCodyVerboseDebugEnabled(),
-      codebase = codyAgentCodebase?.currentCodebase(),
-    )
+    val config =
+        ExtensionConfiguration(
+            serverEndpoint = serverAuth.instanceUrl,
+            accessToken = serverAuth.accessToken,
+            customHeaders = getCustomRequestHeadersAsMap(serverAuth.customRequestHeaders),
+            proxy = UserLevelConfig.getProxy(),
+            autocompleteAdvancedServerEndpoint = UserLevelConfig.getAutocompleteServerEndpoint(),
+            autocompleteAdvancedAccessToken = UserLevelConfig.getAutocompleteAccessToken(),
+            autocompleteAdvancedEmbeddings = UserLevelConfig.getAutocompleteAdvancedEmbeddings(),
+            debug = isCodyDebugEnabled(),
+            verboseDebug = isCodyVerboseDebugEnabled(),
+            codebase = codyAgentCodebase?.currentCodebase(),
+        )
 
     UserLevelConfig.getAutocompleteProviderType()?.let {
       config.autocompleteAdvancedProvider = it.vscodeSettingString()
@@ -72,11 +73,10 @@ object ConfigUtil {
   }
 
   @JvmStatic
-  fun getCustomRequestHeadersAsMap(
-    customRequestHeaders: String
-  ): Map<String, String> {
+  fun getCustomRequestHeadersAsMap(customRequestHeaders: String): Map<String, String> {
     val result: MutableMap<String, String> = HashMap()
-    val pairs = customRequestHeaders.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    val pairs =
+        customRequestHeaders.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
     var i = 0
     while (i + 1 < pairs.size) {
       result[pairs[i]] = pairs[i + 1]
@@ -93,23 +93,26 @@ object ConfigUtil {
     return if (plugin != null) plugin.version else "unknown"
   }
 
-  @JvmStatic
-  fun isCodyEnabled(): Boolean = CodyApplicationSettings.getInstance().isCodyEnabled
+  @JvmStatic fun isCodyEnabled(): Boolean = CodyApplicationSettings.getInstance().isCodyEnabled
 
   @JvmStatic
   fun isCodyDebugEnabled(): Boolean = CodyApplicationSettings.getInstance().isCodyDebugEnabled
 
   @JvmStatic
-  fun isCodyVerboseDebugEnabled(): Boolean = CodyApplicationSettings.getInstance().isCodyVerboseDebugEnabled
+  fun isCodyVerboseDebugEnabled(): Boolean =
+      CodyApplicationSettings.getInstance().isCodyVerboseDebugEnabled
 
   @JvmStatic
-  fun isCodyAutocompleteEnabled(): Boolean = CodyApplicationSettings.getInstance().isCodyAutocompleteEnabled
+  fun isCodyAutocompleteEnabled(): Boolean =
+      CodyApplicationSettings.getInstance().isCodyAutocompleteEnabled
 
   @JvmStatic
-  fun isCustomAutocompleteColorEnabled(): Boolean = CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled
+  fun isCustomAutocompleteColorEnabled(): Boolean =
+      CodyApplicationSettings.getInstance().isCustomAutocompleteColorEnabled
 
   @JvmStatic
-  fun getCustomAutocompleteColor(): Int? = CodyApplicationSettings.getInstance().customAutocompleteColor
+  fun getCustomAutocompleteColor(): Int? =
+      CodyApplicationSettings.getInstance().customAutocompleteColor
 
   @JvmStatic
   fun getWorkspaceRoot(project: Project): String? {
@@ -125,16 +128,12 @@ object ConfigUtil {
   fun getAllEditors(): List<Editor> {
     val openProjects = ProjectManager.getInstance().openProjects
     return Arrays.stream(openProjects)
-      .flatMap { project: Project? ->
-        Arrays.stream(
-          FileEditorManager.getInstance(
-            project!!
-          ).allEditors
-        )
-      }
-      .filter { fileEditor: FileEditor? -> fileEditor is TextEditor }
-      .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
-      .collect(Collectors.toList())
+        .flatMap { project: Project? ->
+          Arrays.stream(FileEditorManager.getInstance(project!!).allEditors)
+        }
+        .filter { fileEditor: FileEditor? -> fileEditor is TextEditor }
+        .map { fileEditor: FileEditor -> (fileEditor as TextEditor).editor }
+        .collect(Collectors.toList())
   }
 
   @JvmStatic
@@ -144,9 +143,6 @@ object ConfigUtil {
 
   @JvmStatic
   fun getShouldAcceptNonTrustedCertificatesAutomatically(): Boolean {
-    return CodyApplicationSettings.getInstance()
-      .shouldAcceptNonTrustedCertificatesAutomatically
+    return CodyApplicationSettings.getInstance().shouldAcceptNonTrustedCertificatesAutomatically
   }
 }
-
-

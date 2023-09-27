@@ -64,11 +64,10 @@ class CodyAgent(private val project: Project) : Disposable {
               server
                   .initialize(
                       ClientInfo(
-                        name = "JetBrains",
-                        version = ConfigUtil.getPluginVersion(),
-                        workspaceRootPath = ConfigUtil.getWorkspaceRoot(project),
-                        extensionConfiguration = ConfigUtil.getAgentConfiguration(project)
-                      ))
+                          name = "JetBrains",
+                          version = ConfigUtil.getPluginVersion(),
+                          workspaceRootPath = ConfigUtil.getWorkspaceRoot(project),
+                          extensionConfiguration = ConfigUtil.getAgentConfiguration(project)))
                   .get()
           logger.info("connected to Cody agent " + info.name)
           server.initialized()
