@@ -163,6 +163,11 @@ func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs
 }
 
 func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
+	// 🚨 SECURITY: only someone with access to the job may copy the blobs
+	if _, err := s.GetSearchJob(ctx, id); err != nil {
+		return err
+	}
+
 	iter := s.getJobLogsIter(ctx, id)
 
 	cw := csv.NewWriter(w)
