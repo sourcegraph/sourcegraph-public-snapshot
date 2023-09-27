@@ -21,6 +21,7 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
         updatedAt: '2021-03-15T19:39:11Z',
         createdAt: '2021-03-15T19:39:11Z',
         rateLimiterState: {
+            __typename: 'RateLimiterState',
             currentCapacity: 10,
             burst: 10,
             limit: 5000,
