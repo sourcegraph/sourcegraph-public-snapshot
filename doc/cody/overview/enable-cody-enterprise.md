@@ -156,7 +156,7 @@ With Cody enabled on your Sourcegraph instance, any user can configure and use t
   <img width="1369" alt="image" src="https://storage.googleapis.com/sourcegraph-assets/cody-sign-in-options.png">
 
 - If you are on version 5.1 and above, you will need to follow an authorization flow to give Cody access to your enterprise instance
-  - For Sourcegraph 5.0 and above, you'll need to generate an access token. From your Sourcegraph account, go to **Settings > Access tokens** (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`)
+  - For Sourcegraph 5.0 and above, you'll need to generate an access token. From your Sourcegraph account, go to **Settings > Access tokens** (`https://<your-instance>.sourcegraph.com/users/<your-username>/settings/tokens`)
 
   <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
