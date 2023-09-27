@@ -2577,6 +2577,116 @@
             "pointer": true
           },
           "default": true
+        },
+        "qdrant": {
+          "description": "Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.",
+          "type": "object",
+          "$comment": "Skipped fields from HnswConfigDiff: MaxIndexingThreads",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "hnsw": {
+              "description": "Overrides for the HNSW index config.",
+              "type": "object",
+              "properties": {
+                "m": {
+                  "description": "Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 8
+                },
+                "efConstruct": {
+                  "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 100
+                },
+                "fullScanThreshold": {
+                  "description": "Minimal size (in KiloBytes) of vectors for additional payload-based indexing.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 1000
+                },
+                "onDisk": {
+                  "description": "Store HNSW index on disk.",
+                  "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": true
+                },
+                "payloadM": {
+                  "description": "Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 8
+                }
+              }
+            },
+            "quantization": {
+              "description": "Overrides for quantization config.",
+              "type": "object",
+              "$comment": "Skipped fields from ScalarQuantization: AlwaysRam",
+              "properties": {
+                "enabled": {
+                  "description": "Whether to enable int8 scalar quantization",
+                  "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": true
+                },
+                "quantile": {
+                  "description": "Any values that lie outside the quantile range will be truncated",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 0.98
+                }
+              }
+            },
+            "optimizers": {
+              "type": "object",
+              "$comment": "Skipped fields from OptimizersConfigDiff: DeletedThreshold, VacuumMinVectorNumber, DefaultSegmentNumber, MaxSegmentSize, FlushIntervalSec, MaxOptimizationThreads",
+              "properties": {
+                "indexingThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 0
+                },
+                "memmapThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors to store in-memory per segment.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 100
+                }
+              }
+            }
+          }
         }
       },
       "examples": [
