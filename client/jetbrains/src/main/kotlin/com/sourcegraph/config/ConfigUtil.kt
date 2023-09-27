@@ -21,7 +21,7 @@ import java.util.stream.Collectors
 import org.jetbrains.annotations.Contract
 
 object ConfigUtil {
-  const val DOTCOM_URL = "https://sourcegraph.com"
+  const val DOTCOM_URL = "https://sourcegraph.com/"
   const val SERVICE_DISPLAY_NAME = "Sourcegraph"
   const val CODY_DISPLAY_NAME = "Cody"
   const val CODE_SEARCH_DISPLAY_NAME = "Code Search"
