@@ -172,11 +172,6 @@
                 class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
         </action>
 
-        <action id="cody.refreshCodyAppDetection" icon="AllIcons.Actions.Refresh"
-                text="Refresh"
-                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection">
-        </action>
-
         <action
             id="cody.downloadAndInstallCodyAction"
             class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
@@ -220,7 +215,6 @@
 
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
-            <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
         <group id="CodyEditorActions" popup="true" text="Cody"
