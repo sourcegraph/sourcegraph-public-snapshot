@@ -34,6 +34,9 @@ type Info struct {
 	Tags []string `json:"t"`
 	// UserCount is the number of users that this license is valid for
 	UserCount uint `json:"u"`
+	// CreatedAt is the date this license was created at. May be zero for
+	// licenses version less than 3.
+	CreatedAt time.Time `json:"c"`
 	// ExpiresAt is the date when this license expires
 	ExpiresAt time.Time `json:"e"`
 	// SalesforceSubscriptionID is the optional Salesforce subscription ID to link licenses
@@ -102,10 +105,15 @@ type encodedInfo struct {
 }
 
 func (l Info) Version() int {
+	// Before version 2, SalesforceSubscriptionID was not yet added.
 	if l.SalesforceSubscriptionID == nil {
 		return 1
 	}
-	return 2
+	// Before version 3, CreatedAt was not yet added.
+	if l.CreatedAt.IsZero() {
+		return 2
+	}
+	return 3
 }
 
 func (l Info) encode() ([]byte, error) {
