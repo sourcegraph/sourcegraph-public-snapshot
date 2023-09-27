@@ -15,6 +15,15 @@ export interface LegacyBatchChangesFilter {
     value: BatchChangeState
 }
 
+export interface UserOnboardingConfig {
+    skipped: boolean
+    userinfo?: {
+        repo: string
+        email: string
+        language: string
+    }
+}
+
 /**
  * Schema for temporary settings.
  */
@@ -42,6 +51,7 @@ export interface TemporarySettingsSchema {
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'onboarding.quickStartTour': TourListState
+    'onboarding.userconfig': UserOnboardingConfig
     'characterKeyShortcuts.enabled': boolean
     'search.homepage.queryExamplesContent': {
         lastCachedTimestamp: string
