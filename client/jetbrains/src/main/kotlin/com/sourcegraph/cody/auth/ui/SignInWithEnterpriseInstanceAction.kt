@@ -9,8 +9,9 @@ import com.sourcegraph.cody.config.CodyPersistentAccountsHost
 import com.sourcegraph.cody.config.signInWithSourcegrapDialog
 import com.sourcegraph.config.ConfigUtil
 
-class SignInWithSourcegraphAction(private val defaultServer: String = ConfigUtil.DOTCOM_URL) :
-    DumbAwareAction("Sign in with Sourcegraph") {
+class SignInWithEnterpriseInstanceAction(
+    private val defaultServer: String = ConfigUtil.DOTCOM_URL
+) : DumbAwareAction("Sign in with Sourcegraph") {
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project
     val accountsHost = CodyPersistentAccountsHost(project)
