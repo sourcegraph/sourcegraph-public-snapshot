@@ -169,12 +169,12 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	defer cw.Flush()
 
 	header := []string{
-		"Repository",
-		"Revision",
-		"Started at",
-		"Finished at",
-		"Status",
-		"Failure Message",
+		"repository",
+		"revision",
+		"started_at",
+		"finished_at",
+		"status",
+		"failure_message",
 	}
 	err = cw.Write(header)
 	if err != nil {
