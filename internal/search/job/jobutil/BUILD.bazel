@@ -74,6 +74,7 @@ go_test(
     srcs = [
         "alert_test.go",
         "combinators_test.go",
+        "exhaustive_job_test.go",
         "expression_job_test.go",
         "filter_file_contains_test.go",
         "filter_file_contributor_test.go",
