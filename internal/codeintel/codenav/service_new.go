@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-func (s *Service) NewGetDefinitions(
+func (s *Service) GetDefinitions(
 	ctx context.Context,
 	args PositionalRequestArgs,
 	requestState RequestState,
@@ -32,7 +32,7 @@ func (s *Service) NewGetDefinitions(
 	return locations, err
 }
 
-func (s *Service) NewGetReferences(
+func (s *Service) GetReferences(
 	ctx context.Context,
 	args PositionalRequestArgs,
 	requestState RequestState,
@@ -48,7 +48,7 @@ func (s *Service) NewGetReferences(
 	)
 }
 
-func (s *Service) NewGetImplementations(
+func (s *Service) GetImplementations(
 	ctx context.Context,
 	args PositionalRequestArgs,
 	requestState RequestState,
@@ -64,7 +64,7 @@ func (s *Service) NewGetImplementations(
 	)
 }
 
-func (s *Service) NewGetPrototypes(
+func (s *Service) GetPrototypes(
 	ctx context.Context,
 	args PositionalRequestArgs,
 	requestState RequestState,
@@ -80,7 +80,7 @@ func (s *Service) NewGetPrototypes(
 	)
 }
 
-func (s *Service) NewGetDefinitionsBySymbolNames(
+func (s *Service) GetDefinitionsBySymbolNames(
 	ctx context.Context,
 	args RequestArgs,
 	requestState RequestState,
