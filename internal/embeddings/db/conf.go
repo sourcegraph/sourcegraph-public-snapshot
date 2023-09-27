@@ -30,11 +30,11 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 
 	conf.Watch(func() {
 		c := conf.Get()
-		qc := conf.GetEmbeddingsConfig(c.SiteConfiguration).Qdrant
-		if !qc.Enabled {
+		qc := conf.GetEmbeddingsConfig(c.SiteConfiguration)
+		if qc == nil || !qc.Qdrant.Enabled {
 			// Embeddings is disabled. Clear any errors and close any previous connection.
 			old := ptr.Swap(&connAndErr{nil, nil})
-			if old.conn != nil {
+			if old != nil && old.conn != nil {
 				old.conn.Close()
 			}
 			return
